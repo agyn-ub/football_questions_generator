@@ -5,14 +5,15 @@ import json
 import os
 
 class QuestionGenerator:
-    def __init__(self):
-        self.prompt_template = """
-        You are a football expert specializing in Real Madrid history and statistics. 
-        Based on these existing questions about Real Madrid:
+    def __init__(self, club_name="Real Madrid"):
+        self.club_name = club_name
+        self.prompt_template = f"""
+        You are a football expert specializing in {club_name} history and statistics. 
+        Based on these existing questions about {club_name}:
 
-        {existing_questions}
+        {{existing_questions}}
 
-        Generate {num_questions} new, unique, and interesting questions about Real Madrid. Focus on:
+        Generate {{num_questions}} new, unique, and interesting questions about {club_name}. Focus on:
         1. Recent achievements and records (2020-2024)
         2. Historical milestones not covered in existing questions
         3. Player statistics and records
@@ -49,7 +50,7 @@ class QuestionGenerator:
             temperature=0.7,
             google_api_key=os.getenv("GOOGLE_API_KEY")
         )
-        self.question_chain = LLMChain(llm=self.llm, prompt=self.prompt)
+        self.question_chain = self.prompt | self.llm
     
     def generate_questions(self, existing_questions, num_questions=5):
         # Format existing questions for the prompt
@@ -58,7 +59,7 @@ class QuestionGenerator:
             for q in existing_questions
         ])
         
-        # Generate new questions
+        # Generate new questions using the new invoke syntax
         response = self.question_chain.invoke({
             "existing_questions": questions_text,
             "num_questions": num_questions
