@@ -19,13 +19,17 @@ class QuestionGenerator:
         3. Player statistics and records
         4. Memorable matches and moments
         5. Club culture and traditions
-
+        
         For each question, follow this exact format:
         - All text content must be in Russian language
         - The field labels "QUESTION:", "ANSWER:", "OPTIONS:" must remain in English
         - Do not translate or modify these field labels
+        - DIFFICULTY: easy, medium, hard
+        - SCORE: easy=5, medium=10, hard=15
         QUESTION: [your question here]
         ANSWER: [correct answer]
+        DIFFICULTY: [difficulty level]
+        SCORE: [score for the question]
         OPTIONS:
         1. [correct answer - same as above]
         2. [wrong option]
@@ -38,6 +42,7 @@ class QuestionGenerator:
         2. Questions are unique and not duplicates of existing ones
         3. Wrong options are plausible but clearly distinct
         4. Each question is separated by "==="
+        5. shuffle options
         """
         
         self.prompt = PromptTemplate(
@@ -65,14 +70,12 @@ class QuestionGenerator:
             "num_questions": num_questions
         })
         
-        # print("\nRaw LLM Response:")
-        # print("-" * 50)
-        # print(response['text'])
-        # print("-" * 50)
+        # Use .content instead of ['text']
+        response_text = response.content
         
         # Parse the response into list of question objects
         questions = []
-        question_blocks = response['text'].strip().split('===')
+        question_blocks = response_text.strip().split('===')
         
         for block in question_blocks:
             if not block.strip():
@@ -83,7 +86,14 @@ class QuestionGenerator:
                 question = block[block.find('QUESTION:') + 9:block.find('ANSWER:')].strip()
                 
                 # Extract answer
-                answer = block[block.find('ANSWER:') + 7:block.find('OPTIONS:')].strip()
+                answer = block[block.find('ANSWER:') + 7:block.find('DIFFICULTY:')].strip()
+                
+                # Extract difficulty
+                difficulty = block[block.find('DIFFICULTY:') + 11:block.find('SCORE:')].strip()
+                
+                # Extract score
+                score_text = block[block.find('SCORE:') + 6:block.find('OPTIONS:')].strip()
+                score = int(score_text) if score_text.isdigit() else 5  # Default to 5 if parsing fails
                 
                 # Extract options
                 options_text = block[block.find('OPTIONS:'):].strip()
@@ -96,7 +106,9 @@ class QuestionGenerator:
                     questions.append({
                         'question': question,
                         'correct_answer': answer,
-                        'options': options
+                        'options': options,
+                        'difficulty': difficulty.lower(),  # normalize to lowercase
+                        'score': score
                     })
             except Exception as e:
                 print(f"Error parsing question block: {e}")

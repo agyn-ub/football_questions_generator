@@ -52,19 +52,20 @@ class Database:
 
     def insert_question(self, question_data, club_id=1):
         try:
-            with self.engine.begin() as connection:  # Using begin() for automatic transaction management
+            with self.engine.begin() as connection:
                 connection.execute(
                     text("""
                         INSERT INTO quiz_questions 
-                        (club_id, question, correct_answer, options, difficulty) 
-                        VALUES (:club_id, :question, :correct_answer, :options, :difficulty)
+                        (club_id, question, correct_answer, options, difficulty, score) 
+                        VALUES (:club_id, :question, :correct_answer, :options, :difficulty, :score)
                     """),
                     {
                         "club_id": club_id,
                         "question": question_data["question"],
                         "correct_answer": question_data["correct_answer"],
                         "options": question_data["options"],
-                        "difficulty": "medium"
+                        "difficulty": question_data.get("difficulty", "medium"),  # default to medium if not provided
+                        "score": question_data.get("score", 5)  # default to 5 if not provided
                     }
                 )
             return True
